@@ -2,7 +2,7 @@
 
 One Paragraph of project description goes here. Change done.
 
-* first bullet point
+* first bullet point2
 * second bullet point
 
 [image1]: ./images/traffic_light.png
