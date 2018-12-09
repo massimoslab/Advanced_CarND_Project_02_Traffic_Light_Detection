@@ -1,13 +1,8 @@
 [image1]: ./images/i2c_1.jpg
 
-# Annex 05 : I2C Connection
+# Project 02 : Traffic Light Detection
 
-There are various ways to connect and control an Arduino from a Raspberry Pi. The easiest solution is to use a USB-to-mini-USB cable. The issue with this solution is that an Arduino can be connected only to one Raspberry Pi. Therefore this would be what is also called a single-master to single-slave solution. In this scenario the Raspberry Pi is the master since it is the device that controls the Arduino, which is the slave. What we want and need is a solution that allows us to have:
-* a single-master to multi-slave
-* a multi-master to single-slave
-* a multi-master to multi-slave
-
-A I2C connection solves this problem in an easy way.
+In this project we will be using the computer vision techniques that we have learned in the course in order to detect a traffic light and determine if the traffic light colour is red, amber or green.
 
 ## 01. I2C Protocol
 
