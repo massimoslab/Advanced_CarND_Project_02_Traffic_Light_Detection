@@ -1,96 +1,142 @@
-# Project 01 : Arduino Traffic Light
+[image1]: ./images/i2c_1.jpg
 
-One Paragraph of project description goes here. Change done.
+# Annex 05 : I2C Connection
 
-* first bullet point2
-* second bullet point
+There are various ways to connect and control an Arduino from a Raspberry Pi. The easiest solution is to use a USB-to-mini-USB cable. The issue with this solution is that an Arduino can be connected only to one Raspberry Pi. Therefore this would be what is also called a single-master to single-slave solution. In this scenario the Raspberry Pi is the master since it is the device that controls the Arduino, which is the slave. What we want and need is a solution that allows us to have:
+* a single-master to multi-slave
+* a multi-master to single-slave
+* a multi-master to multi-slave
 
-[image1]: ./images/traffic_light.png
+A I2C connection solves this problem in an easy way.
 
-this is the first image
+## 01. I2C Protocol
+
+I2C or inter-integrated circuit protocol is a hardware protocol designed to allow multiple, slave integrated circuits to communicate with one or more master. It uses two bidirectional open-drain lines, Serial Data Line (SDA) and Serial Clock Line (SCL), pulled up with resistors. Typical voltages used are +5 V or +3.3 V, although systems with other voltages are permitted.
+
+
+## 02. Devices assembly
+
+xxx
 
 ![alt text][image1]
 
-## 01. Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
-
-### Prerequisites
+## 03. The Arduino code
 
 What things you need to install the software and how to install them
 
 ```
-Give examples
+#include <Wire.h>
+#include <Servo.h>
+
+#define SLAVE_ADDRESS 12
+
+int enA = 6;
+int in1 = 8;
+int in2 = 7;
+int servoPIN = 10;
+
+Servo steeringServo;
+
+
+void setup() {
+  Serial.begin(9600);
+  Wire.begin(SLAVE_ADDRESS);
+  Wire.onReceive(receiveData);
+  pinMode(enA, OUTPUT);
+  pinMode(in1, OUTPUT);
+  pinMode(in2, OUTPUT);
+  steeringServo.attach(servoPIN);
+}
+
+
+void loop() {
+  delay(100);
+}
+
+
+void receiveData(int byteCount) {
+  int cmd[3];
+  int i = 0;
+
+  while(Wire.available()) {
+    cmd[i] = Wire.read();
+    i++;
+  }
+
+  // send the throttle value to the motor
+  analogWrite(enA, cmd[1]);
+  digitalWrite(in1, 1);
+  digitalWrite(in2, 0);
+
+  // send the steering value to the servo
+  steeringServo.write(cmd[2]);
+}
 ```
 
-### Installing
+#### Understanding the code
 
-A step by step series of examples that tell you how to get a development env running
+The **void setup()** function is run first with its content between brackets. The **Serial.begin(9600)** sets up the speed of the serial port to 9600 baud. The baud setting in the serial monitor window must match this value so that the Arduino and serial monitor window are communicating at the same speed.
 
-Say what the step will be
+The **void loop()** function is run second with all its content between brackets.
+The **Serial.println("Hello, world!")** sends the text *Hello World!* to the serial / USB port for display in the serial monitor window.
 
-```
-Give the example
-```
+## 04. The Raspberry Pi code
 
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-## 02. Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
+What things you need to install the software and how to install them
 
 ```
-Give an example
+from smbus import SMBus
+import time
+
+
+bus = SMBus(1)
+arduinoAddress = 12
+
+
+step_total = 20
+step_count = 0
+
+throttle_max = 255
+throttle_min = 0
+throttle_step = int((throttle_max - throttle_min) / step_total)
+
+steering_max = 130
+steering_min = 50
+steering_step = int((steering_max - steering_min) / step_total)
+
+throttle_val = throttle_min
+steering_val = steering_min
+
+
+while True:
+
+	while step_count < step_total:
+		bus.write_i2c_block_data(arduinoAddress, 1, [throttle_val, steering_val])
+		throttle_val += throttle_step
+		steering_val += steering_step
+		step_count += 1
+		print("throttle: " + str(throttle_val) + ", steering: " + str(steering_val))
+		time.sleep(0.5)
+
+	while step_count > 0:
+		bus.write_i2c_block_data(arduinoAddress, 1, [throttle_val, steering_val])
+		time.sleep(0.1)
+		throttle_val -= throttle_step
+		steering_val -= steering_step
+		step_count -= 1
+		print("throttle: " + str(throttle_val) + ", steering: " + str(steering_val))
+		time.sleep(0.5)
 ```
 
-### And coding style tests
+#### Understanding the code
 
-Explain what these tests test and why
+The **void setup()**
 
-```
-Give an example
-```
+## Author
 
-## 03. Deployment
-
-Add additional notes about how to deploy this on a live system
-
-## 04. Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags).
-
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+**Massimo Passamonti**: [email me](me@massimoslab.com)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+This project and its source code are licensed under the MIT License. [See MIT License](https://github.com/github/choosealicense.com/blob/gh-pages/LICENSE.md) file for more details.
